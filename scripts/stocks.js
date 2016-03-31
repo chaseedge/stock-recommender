@@ -1,5 +1,5 @@
 /*Table of Contents
-1. Populate Autocomplete Fields
+1. Main function
 2. Pulling in Data
 3. Parsing Data
 4. Calculting Target Price
@@ -11,46 +11,15 @@
 // Uses "Awesomplete" and an object of all tickers
 //
 
-function autoTickers(){ //adds tickers to the autocomplete form. Code in Tickers.js file
-	//addTickers();
-	//startAuto();
-}
-
-function startAuto(){
-	var tag = document.createElement("script");
-	tag.src = "scripts/awesomplete.js";
-	document.getElementsByTagName("head")[0].appendChild(tag);
-}
-
-function addTickers() {
-	var tickers = allTickers();
-
-	var list = document.getElementById('mylist');
-
-	for (var i = 0; i < tickers.length; i++) {
-		var entry = tickers[i];
-		var name = entry["Name"];
-		var ticker = entry["Symbol"];
-		var option = document.createElement('option');
-		option.text = name + " - " + ticker;
-		option.value = ticker;
-		list.appendChild(option);
-	}
-}
-
 
 //2. Pulling in Data
 
 function getData() {
+	loadingMessage(true);
 	var ticker = document.getElementById("ticker").value;
 	var targetPrices = {};
 	var compInfo = {};
-	var multiples = {
-		priceEarnings : {},
-		priceBook : {},
-		evEbitda : {},
-		evFcf : {}
-	};
+	var multiples = {};
 
 	function quote(data){
 		data = data.query.results.quote;
@@ -81,19 +50,27 @@ function getData() {
 				evEbitdaTargetPrice(compInfo, multiples, targetPrices);
 				evFcfTargetPrice(compInfo, multiples, targetPrices);
 				averagePrices(targetPrices);
-				htmlTest([compInfo.price],[1], "price1");
-				htmlTest([compInfo.price],[5], "price2");
-				htmlTest([compInfo.eps, multiples.pe.peerMedian, targetPrices.pe],[1, 4, 5], "peTarget");
-				htmlTest([compInfo.bvps, multiples.pb.peerMedian, targetPrices.pb],[1, 4, 5], "pbTarget");
-				htmlTest([compInfo.ebitdaText, multiples.evEbitda.peerMedian, targetPrices.evEbitda],[1, 4, 5], "evEbitdaTarget");
-				htmlTest([compInfo.fcfText, multiples.evFcf.peerMedian, targetPrices.evFcf],[1, 4, 5], "evFcfTarget");
-				htmlTest([targetPrices.average],[5], "average");
+				htmlOutput(compInfo, multiples, targetPrices);
 				commentary(compInfo, targetPrices);
+				loadingMessage(false);
 			})
 		})
-	}).catch(function(error) {console.log("ERROR - SOMETHING WENT TERRIBLY WRONG!");});
+	}).catch(function(error) {
+		alert("Error - Please try another ticker");
+		loadingMessage(false);
+	});
 
 
+}
+
+function loadingMessage(boolean) {
+	var div = document.getElementById("loading");
+	var message = "Thinking<span>.</span><span>.</span><span>.</span><span>.</span>";
+	if (boolean) {
+		div.innerHTML = message;
+	} else {
+		div.innerHTML = "";
+	}
 }
 
 //2. Pulling data
@@ -126,6 +103,7 @@ function infoRequest (url) {
     xhr.send();
   });
 }
+
 
 //3. Parsing Data
 // Takes the data and populates the appropriate objects
@@ -256,7 +234,23 @@ function formatNum(num) {
   });
 }
 
-function htmlTest(dataArr,colArr, htmlId) {
+function htmlOutput(compInfo, multiples, targetPrices) {
+	htmlName(compInfo);
+	htmlData([compInfo.price],[1], "price1");
+	htmlData([compInfo.price],[5], "price2");
+	htmlData([compInfo.eps, multiples.pe.peerMedian, targetPrices.pe],[1, 4, 5], "peTarget");
+	htmlData([compInfo.bvps, multiples.pb.peerMedian, targetPrices.pb],[1, 4, 5], "pbTarget");
+	htmlData([compInfo.ebitdaText, multiples.evEbitda.peerMedian, targetPrices.evEbitda],[1, 4, 5], "evEbitdaTarget");
+	htmlData([compInfo.fcfText, multiples.evFcf.peerMedian, targetPrices.evFcf],[1, 4, 5], "evFcfTarget");
+	htmlData([targetPrices.average],[5], "average");
+}
+
+function htmlName(compInfo){
+		var div = document.getElementById("name");
+		div.innerHTML = compInfo.name;
+}
+
+function htmlData(dataArr,colArr, htmlId) {
 	var row = document.getElementById(htmlId);
 	var cells = row.getElementsByTagName("td");
 	for (var i = 0; i < dataArr.length; i++) {
