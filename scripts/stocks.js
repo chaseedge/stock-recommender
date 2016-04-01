@@ -1,5 +1,10 @@
-/*Table of Contents
-1. Main function
+/* Stock Valuer
+Author: Chase Edge
+www.github.com/chaseedge
+
+
+Table of Contents
+1. Initiation Function
 2. Pulling in Data
 3. Parsing Data
 4. Calculting Target Price
@@ -7,19 +12,16 @@
 */
 
 
-//1. Populate Autocomplete Fields
-// Uses "Awesomplete" and an object of all tickers
+
+//1. Initiation Function
 //
-
-
-//2. Pulling in Data
-
 function getData() {
-	loadingMessage(true);
-	var ticker = document.getElementById("ticker").value;
+	var ticker = tickerDiv().value;
 	var targetPrices = {};
 	var compInfo = {};
 	var multiples = {};
+	var headlines = [];
+	loadingMessage(true);
 
 	function quote(data){
 		data = data.query.results.quote;
@@ -36,40 +38,49 @@ function getData() {
 	function peers(data){
 		data = data.keyValuationItems;
 		parsePeers(data, multiples, compInfo);
-		htmlMultiples(multiples);
 		console.log("finished with peers data");
 	}
 
+// Using promises instead of synchronous XHR
 	infoRequest(buildLink(ticker, "quote")).then(function(data){
 		quote(data);
 		return infoRequest(buildLink(ticker, "stats")).then(function(data){
 			stats(data);
-			return infoRequest(buildLink(ticker, "peers")).then(function(data){
-				peers(data);
-				equityTargetPrice(compInfo, multiples, targetPrices);
-				evEbitdaTargetPrice(compInfo, multiples, targetPrices);
-				evFcfTargetPrice(compInfo, multiples, targetPrices);
-				averagePrices(targetPrices);
-				htmlOutput(compInfo, multiples, targetPrices);
-				commentary(compInfo, targetPrices);
-				loadingMessage(false);
+				return infoRequest(buildLink(ticker, "peers")).then(function(data){
+					peers(data);
+					calcTargetPrice(compInfo, multiples, targetPrices);
+					htmlOutput(compInfo, multiples, targetPrices);
+					loadingMessage(false);
+					commentary(compInfo, targetPrices);
+				})
 			})
-		})
 	}).catch(function(error) {
 		alert("Error - Please try another ticker");
+		console.log(error);
 		loadingMessage(false);
+		tickerDiv().focus();
+		tickerDiv().select();
 	});
+}
 
-
+function tickerDiv() {
+	var inputDiv = document.getElementById("ticker");
+	var ticker = inputDiv.value.trim();
+	ticker = ticker.toUpperCase();
+	inputDiv.value = ticker;
+	return inputDiv;
 }
 
 function loadingMessage(boolean) {
-	var div = document.getElementById("loading");
-	var message = "Thinking<span>.</span><span>.</span><span>.</span><span>.</span>";
+	var loadingDiv = document.getElementById("loading");
+	var message = "Thinking<span>.</span><span>.</span><span>.</span>";
+	var noteDiv = document.getElementById("evInfo");
+	var note = "1. Formula for the implied share values from enterprise multiples is  (Enterprise Value - Net Debt) / Shares Outstanding. ";
+	noteDiv.innerHTML = note;
 	if (boolean) {
-		div.innerHTML = message;
+		loadingDiv.innerHTML = message;
 	} else {
-		div.innerHTML = "";
+		loadingDiv.innerHTML = "";
 	}
 }
 
@@ -107,6 +118,44 @@ function infoRequest (url) {
 
 //3. Parsing Data
 // Takes the data and populates the appropriate objects
+function parseQuote(data, compInfo){
+	var apiLabels = ["BookValue", "EBITDA", "PreviousClose", "LastTradePriceOnly", "MarketCapitalization", "Name", "OneyrTargetPrice", "symbol" ];
+	var newLabels = ["bvps", "ebitdaText", "pricePrevClose", "price", "mktCapText", "name", "yahooTargetPrice", "symbol"];
+	for (var i = 0; i < apiLabels.length; i++) {
+		compInfo[newLabels[i]] = data[apiLabels[i]];
+	}
+	compInfo.mktCap = textToNum(compInfo["mktCapText"]);
+	compInfo.ebitdaText = "$" + compInfo.ebitdaText;
+}
+
+function parseStats(data, compInfo){
+	compInfo.ev = data["EnterpriseValue"]["content"];
+	compInfo.ebitda = data["EBITDA"]["content"];
+	compInfo.shares = data["SharesOutstanding"];
+	compInfo.netDebt = compInfo["ev"] - compInfo["mktCap"];
+}
+
+function parsePeers(data, multiples, compInfo){
+	multiples.pe = data["Price to Earnings (P/E)"];
+	multiples.pb = data["Price to Book (P/B)"];
+	multiples.evEbitda = data["EV / EBITDA"];
+	multiples.evFcf = data["EV / FCF"];
+	var evFcf = Number(multiples.evFcf.rating);
+	if (!isNaN(evFcf)) {
+		compInfo.fcf = Number(compInfo.ev) / evFcf;
+		compInfo.fcf = compInfo.fcf.toFixed(0);
+		compInfo.fcfText = "$" + numToText(compInfo.fcf);
+	} else {
+		compInfo.fcfText = "n/a";
+	}
+	var pe = Number(multiples.pe.rating);
+	if (!isNaN(pe)) {
+		compInfo.eps = Number(compInfo.pricePrevClose) / pe;
+		compInfo.eps = compInfo.eps.toFixed(2);
+	} else {
+		compInfo.eps = "n/a";
+	}
+}
 
 //some data is returned in text like 640.23B, this converts it to a digit
 function textToNum(num){
@@ -122,7 +171,7 @@ function textToNum(num){
 
 //converts numbers into text with units  12343334 -> 12.34M
 function numToText(num){
-	var len = num.length;
+	var len = String(num).length;
 	var textNum;
 	if (len > 9) {
 		textNum = (num / 1000000000).toFixed(2);
@@ -134,48 +183,27 @@ function numToText(num){
 	return textNum;
 }
 
-function parseQuote(data, compInfo){
-	var apiLabels = ["BookValue", "EBITDA", "EarningsShare", "LastTradePriceOnly", "MarketCapitalization", "Name", "OneyrTargetPrice", "symbol" ];
-	var newLabels = ["bvps", "ebitdaText", "eps", "price", "mktCapText", "name", "yahooTargetPrice", "symbol"];
-	for (var i = 0; i < apiLabels.length; i++) {
-		compInfo[newLabels[i]] = data[apiLabels[i]];
-	}
-	compInfo["mktCap"] = textToNum(compInfo["mktCapText"]);
+//4. Calculting Target Price
+
+function calcTargetPrice(compInfo, multiples, targetPrices) {
+	equityTargetPrice(compInfo, multiples, targetPrices);
+	evEbitdaTargetPrice(compInfo, multiples, targetPrices);
+	evFcfTargetPrice(compInfo, multiples, targetPrices);
+	averagePrices(targetPrices);
 }
-
-function parseStats(data, compInfo){
-	compInfo["ev"] = data["EnterpriseValue"]["content"];
-	compInfo["ebitda"] = data["EBITDA"]["content"];
-	compInfo["shares"] = data["SharesOutstanding"];
-	compInfo["netDebt"] = compInfo["ev"] - compInfo["mktCap"];
-}
-
-function parsePeers(data, multiples, compInfo){
-	multiples["pe"] = data["Price to Earnings (P/E)"];
-	multiples["pb"] = data["Price to Book (P/B)"];
-	multiples["evEbitda"] = data["EV / EBITDA"];
-	multiples["evFcf"] = data["EV / FCF"];
-	compInfo["fcf"] = Number(compInfo["ev"]) / Number(multiples["evFcf"]["rating"]);
-	compInfo["fcf"] = compInfo["fcf"].toFixed(0);
-	compInfo.fcfText = numToText(compInfo.fcf);
-}
-
-
 
 function equityTargetPrice(compInfo, multiples, targetPrices) {
 	var pe = multiples.pe.peerMedian;
 	var eps = compInfo.eps;
 	var pb = multiples.pb.peerMedian;
 	var bvps = compInfo.bvps;
+	targetPrices.pe = "n/a";
+	targetPrices.pb = "n/a";
 	if (!isNaN(pe * eps) && eps > 0) {
 		targetPrices.pe = pe * eps;
-	} else {
-		targetPrices.pe = "n/a";
 	}
 	if (!isNaN(pb * bvps) && bvps > 0) {
 		targetPrices.pb = pb * bvps;
-	} else {
-		targetPrices.pb = "n/a";
 	}
 }
 
@@ -183,12 +211,13 @@ function evEbitdaTargetPrice(compInfo, multiples, targetPrices) {
 	var ebitdaMultiple = multiples.evEbitda.peerMedian;
 	var ebitda = compInfo.ebitda;
 	var shares = Number(compInfo.shares);
+	targetPrices.evEbitda = "n/a";
 	if (!isNaN(ebitdaMultiple * ebitda) && ebitda > 0) {
 		var evEbitda = ebitdaMultiple * ebitda;
 		var mktCap = evEbitda - compInfo.netDebt;
-		targetPrices.evEbitda = (mktCap / shares);
-	} else {
-		targetPrices.evEbitda = "n/a";
+		if (mktCap > 0) {
+			targetPrices.evEbitda = (mktCap / shares);
+		}
 	}
 }
 
@@ -196,70 +225,13 @@ function evFcfTargetPrice(compInfo, multiples, targetPrices) {
 	var fcfMultiple = multiples.evFcf.peerMedian;
 	var fcf = compInfo.fcf;
 	var shares = Number(compInfo.shares);
+	targetPrices.evFcf = "n/a";
 	if (!isNaN(fcfMultiple * fcf)) {
 		var evFcf = fcfMultiple * fcf;
 		var mktCap = evFcf - compInfo.netDebt;
 		if (mktCap > 0) {
 				targetPrices.evFcf = (mktCap / shares);
-		} else {
-				targetPrices.evFcf = "n/a";
 		}
-	} else {
-		targetPrices.evFcf = "n/a";
-	}
-}
-
-
-function htmlMultiples(obj) {
-	var columnLabels = ["labels", "rating", "empty", "peerMin", "peerMedian", "peerMax"];
-	for (var x in obj) {
-		for (var key in obj[x]) {
-			var col = columnLabels.indexOf(key);
-			var value = Number(obj[x][key]).toFixed(2);
-			if (isNaN(value)){
-				value = "n/a";
-			}
-			var row = document.getElementById(x);
-			if (row && col > 0) {
-				var cells = row.getElementsByTagName("td");
-				cells[col].innerHTML = value;
-			}
-		}
-	}
-}
-
-function formatNum(num) {
-  return (num + "").replace(/\b(\d+)((\.\d+)*)\b/g, function(a, b, c) {
-    return (b.charAt(0) > 0 && !(c || ".").lastIndexOf(".") ? b.replace(/(\d)(?=(\d{3})+$)/g, "$1,") : b) + c;
-  });
-}
-
-function htmlOutput(compInfo, multiples, targetPrices) {
-	htmlName(compInfo);
-	htmlData([compInfo.price],[1], "price1");
-	htmlData([compInfo.price],[5], "price2");
-	htmlData([compInfo.eps, multiples.pe.peerMedian, targetPrices.pe],[1, 4, 5], "peTarget");
-	htmlData([compInfo.bvps, multiples.pb.peerMedian, targetPrices.pb],[1, 4, 5], "pbTarget");
-	htmlData([compInfo.ebitdaText, multiples.evEbitda.peerMedian, targetPrices.evEbitda],[1, 4, 5], "evEbitdaTarget");
-	htmlData([compInfo.fcfText, multiples.evFcf.peerMedian, targetPrices.evFcf],[1, 4, 5], "evFcfTarget");
-	htmlData([targetPrices.average],[5], "average");
-}
-
-function htmlName(compInfo){
-		var div = document.getElementById("name");
-		div.innerHTML = compInfo.name;
-}
-
-function htmlData(dataArr,colArr, htmlId) {
-	var row = document.getElementById(htmlId);
-	var cells = row.getElementsByTagName("td");
-	for (var i = 0; i < dataArr.length; i++) {
-		var col = colArr[i];
-		var value = dataArr[i];
-		if (!isNaN(value)) {
-			value = Number(value).toFixed(2);
-		}
-		cells[col].innerHTML = value;
 	}
 }
 
@@ -281,22 +253,107 @@ function averagePrices(targetPrices){
 	}
 }
 
+
+
+//5. HTML Output
+
+//to keep Promises clean, html output were included here
+function htmlOutput(compInfo, multiples, targetPrices) {
+	htmlName(compInfo);
+	htmlMultiples(multiples);
+	htmlData([compInfo.price],[1], "price1");
+	htmlData([compInfo.price],[2], "price2");
+	htmlData([compInfo.yahooTargetPrice],[2], "yahooTargetPrice");
+	htmlData([compInfo.eps, multiples.pe.peerMedian, targetPrices.pe],[1, 4, 5], "peTarget");
+	htmlData([compInfo.bvps, multiples.pb.peerMedian, targetPrices.pb],[1, 4, 5], "pbTarget");
+	htmlData([compInfo.ebitdaText, multiples.evEbitda.peerMedian, targetPrices.evEbitda],[1, 4, 5], "evEbitdaTarget");
+	htmlData([compInfo.fcfText, multiples.evFcf.peerMedian, targetPrices.evFcf],[1, 4, 5], "evFcfTarget");
+	htmlData([targetPrices.average],[2], "average");
+}
+
+function htmlName(compInfo){
+		var div = document.getElementById("name");
+		div.innerHTML = compInfo.name;
+}
+
+// populates the multiples in the top table
+function htmlMultiples(obj) {
+	var columnLabels = ["labels", "rating", "empty", "peerMin", "peerMedian", "peerMax"];
+	for (var x in obj) {
+		for (var key in obj[x]) {
+			var col = columnLabels.indexOf(key);
+			var value = Number(obj[x][key]).toFixed(2);
+			if (isNaN(value)){
+				value = "n/a";
+			} else {
+				value = value + "x";
+			}
+			var row = document.getElementById(x);
+			if (row && col > 0) {
+				var cells = row.getElementsByTagName("td");
+				cells[col].innerHTML = value;
+			}
+		}
+	}
+}
+
+// populates the multiples in the bottom table
+function htmlData(dataArr,colArr, htmlId) {
+	var row = document.getElementById(htmlId);
+	var cells = row.getElementsByTagName("td");
+	for (var i = 0; i < dataArr.length; i++) {
+		var col = colArr[i];
+		var value = dataArr[i];
+		if (col === 1 | col === 5 | col === 2) {
+			if (value > 0) {
+				value = "$" + Number(value).toFixed(2);
+			} else if (value < 0) {
+				value = "($" + Number(value).toFixed(2).replace(/-/,"") + ")";
+			}
+		}
+		if (col === 4) {
+			value = value.toFixed(2) + "x";
+		}
+		cells[col].innerHTML = value;
+	}
+}
+
 function commentary(compInfo, targetPrices) {
 	var name = compInfo.name;
 	var price = compInfo.price;
 	var calcPrice = targetPrices.average;
 	var diff = calcPrice - price;
+	var percent = calcPrice / price;
 	var text;
 	if (isNaN(diff)) {
 		text = "Sorry, there was not enough data points for " + name + " to make a recommendation. Please try a different ticker.";
 	}
 	if (diff > 0) {
-		text = "Based on these metrics, it appears that " + name + " is undervalued by $" + diff.toFixed(2) + ". So it might be a good time to buy!";
+		text = "Based on these metrics, it appears that " + name + " may be <span>undervalued</span> by $" + diff.toFixed(2) + ". So it might be a good time to buy!";
 	} else  if (diff < 0){
-		text = "Based on these metrics, it appears that " + name + " is overvalued by $" + diff.toFixed(2) + ". So you might want to wait to buy any shares or maybe short it!";
+		text = "Based on these metrics, it appears that " + name + " may be <span>overvalued</span> by $" + Math.abs(diff.toFixed(2)) + ". So you might want to wait to buy any shares or maybe short it!";
 	} else if (diff = 0) {
 		text = name + " appears to be valued appropriately!";
 	}
 	var div = document.getElementById("commentary");
 	div.innerHTML = text;
+	notes(compInfo, targetPrices);
+}
+
+
+//Adds info on enterprise value to share price calculations to the footer.
+function notes(compInfo, targetPrices) {
+	if (targetPrices.evEbitda > 0 | targetPrices.evFcf > 0) {
+		if (compInfo.netDebt < 0) { 		//sometimes net debt is negative (cash > debt). -123.0 -> ($123.0)
+			netDebt = numToText(compInfo.netDebt);
+			netDebt = netDebt.replace(/-/,"");
+			netDebt = "($" + netDebt +")";
+		} else {
+			netDebt = "$" + numToText(compInfo.netDebt);
+		}
+		var text = "The company's net debt is " + netDebt + " and it has " + numToText(compInfo.shares) + " shares outstanding.";
+		var parentDiv = document.getElementById("evInfo");
+		var tNode = document.createTextNode(text);
+		parentDiv.appendChild(tNode);
+	}
 }

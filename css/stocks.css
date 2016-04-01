@@ -11,6 +11,7 @@
     }
 }
 .loading span {
+    font-size: 1.5em;
     animation-name: blink;
     animation-duration: 1.4s;
     animation-iteration-count: infinite;
@@ -24,4 +25,70 @@
 }
 #loading {
   display: inline-block;
+}
+
+.container {
+  padding-top: 50px;
+}
+
+#ticker {
+  padding-right: 10px;
+  height: 38px;
+  text-align: center;
+  padding-bottom: 5px;
+  margin-bottom: 0px;
+}
+
+button.three.columns.button-primary {
+  padding-bottom: 5px;
+  margin-bottom: 0px;
+}
+
+#loading {
+  float: left;
+  margin: 0px 5px 0px 10px;
+  padding-top: 5px;
+  padding-left: 5px;
+  padding-bottom: 6px;
+  vertical-align: middle;
+}
+
+
+th, td {
+  text-align: center;
+}
+td:first-child {
+  text-align: left;
+}
+
+footer {
+  margin-top: 100px;
+  border-top: 2px solid #222;
+  margin-left: 5%;
+  margin-right: 5%;
+  margin-bottom: 20px;
+  padding-top: 5px;
+  font-size: 0.8em;
+}
+
+footer p {
+  margin-bottom: 2px;
+  padding: 0px 10px 0px 10px;
+}
+
+caption {
+  text-align: center;
+  font-weight: bold;
+}
+
+#average td:nth-child(2), #price2 td:nth-child(2), #yahooTargetPrice td:nth-child(2) {
+  text-align: left;
+}
+#average, #price2, #yahooTargetPrice {
+  font-weight: bold;
+}
+
+#commentary span {
+  font-style: italic;
+  font-weight: bold;
 }

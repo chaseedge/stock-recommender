@@ -8,16 +8,17 @@
 		<script type="text/javascript" src="scripts/stocks.js"></script>
 <!--REMOVE LIVERELOAD!!!-->
 		<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
-
+		<title>Stock Valuer</title>
  	</head>
  	<body>
  		<div class="container">
- 			<h5>This app performs relative valuations on any given US public company.</h5>
-			<div class="input">
-				<input id="ticker">
-				<button onclick="getData()" class="button-primary">Run it</button>
+ 			<p class="intro">This app performs relative valuations on any given US public company. It takes equity and enterprise value multiples of a company's peers and applies it to the company.</p>
+			<div class="row">
+				<input id="ticker" class="three columns" placeholder="Enter a ticker">
+				<button onclick="getData()" class="three columns button-primary">Run it</button>
 				<p id="loading" class="loading"></p>
 			</div>
+
 			<div>
 				<table class="u-full-width">
 					<thead>
@@ -74,7 +75,6 @@
 				<br>
 
 				<table id="priceTarget" class="u-full-width">
-					<caption>Target Price Calculations</caption>
 					<thead>
 						<tr>
 							<th></th>
@@ -103,7 +103,7 @@
 							<td></td>
 						</tr>
 						<tr id="evEbitdaTarget">
-							<td>EBITDA</td>
+							<td>EBITDA<sup>1</sup></td>
 							<td></td>
 							<td></td>
 							<td></td>
@@ -111,7 +111,7 @@
 							<td></td>
 						</tr>
 						<tr id="evFcfTarget">
-							<td>FCF</td>
+							<td>FCF<sup>1</sup></td>
 							<td></td>
 							<td></td>
 							<td></td>
@@ -120,29 +120,29 @@
 						</tr>
 						<tr id="average">
 							<td></td>
-							<td></td>
-							<td></td>
-							<td></td>
-							<td>Average</td>
+							<td colspan="4">Implied Price (average)</td>
 							<td></td>
 						</tr>
 						<tr id="price2">
 							<td></td>
+							<td colspan="4">Current Price</td>
 							<td></td>
+						</tr>
+						<tr id="yahooTargetPrice">
 							<td></td>
-							<td></td>
-							<td>Current Price</td>
+							<td colspan="4">One Year Analyst Price Target</td>
 							<td></td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 			<p id="commentary"></p>
-
 		</div>
 		<footer>
-			<p>In no shape, form or fashion should the information presented here be relied upon. The information is solely for illustative purposes and should not be construed as financial advice.</p>
+			<p id="evInfo"></p>
+			<p>The Information on this Site is provided for illustration purposes only. The Information is not intended to be nor should it be construed as financial advice or any other advice.</br></p>
 			<p>Data is supplied by Yahoo Finance and Capital Cube.</p>
 		</footer>
+
  	</body>
 </html>

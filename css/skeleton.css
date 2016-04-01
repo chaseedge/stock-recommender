@@ -1,5 +1,4 @@
 /*
-Originally based off of:
 * Skeleton V2.0.4
 * Copyright 2014, Dave Gamache
 * www.getskeleton.com
@@ -24,7 +23,6 @@ Originally based off of:
 - Utilities
 - Clearing
 - Media Queries
-- MY ADDITIONAL CSS CODE
 */
 
 
@@ -327,12 +325,11 @@ pre > code {
 th,
 td {
   padding: 12px 15px;
-  text-align: center;
+  text-align: left;
   border-bottom: 1px solid #E1E1E1; }
 th:first-child,
 td:first-child {
-  padding-left: 0; 	text-align: left;
-}
+  padding-left: 0; }
 th:last-child,
 td:last-child {
   padding-right: 0; }
@@ -419,33 +416,3 @@ there.
 
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {}
-
-/* MY FORMATTING
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
-/*makes loading message blink*/
-@keyframes blink {
-    0% {
-      opacity: .2;
-    }
-    20% {
-      opacity: 1;
-    }
-    100% {
-      opacity: .2;
-    }
-}
-.loading span {
-    animation-name: blink;
-    animation-duration: 1.4s;
-    animation-iteration-count: infinite;
-    animation-fill-mode: both;
-}
-.loading span:nth-child(2) {
-   animation-delay: .2s;
-}
-.loading span:nth-child(3) {
-    animation-delay: .4s;
-}
-#loading {
-  display: inline-block;
-}
