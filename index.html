@@ -12,9 +12,9 @@
  	</head>
  	<body>
  		<div class="container">
- 			<p class="intro">This app performs relative valuations on any given US public company. It takes equity and enterprise value multiples of a company's peers and applies it to the company.</p>
+ 			<p class="intro">This app performs relative valuations on any given US public company. It takes equity and enterprise value multiples of a company's industry and applies it to the company.</p>
 			<div class="row">
-				<input id="ticker" class="three columns" placeholder="Enter a ticker">
+				<input id="ticker" class="three columns" placeholder="Enter a ticker" onclick="this.select();">
 				<button onclick="getData()" class="three columns button-primary">Run it</button>
 				<p id="loading" class="loading"></p>
 			</div>
@@ -26,7 +26,7 @@
 							<th></th>
 							<th id="name"></th>
 							<th></th>
-							<th colspan="3" style="text-align:center;">Peers</th>
+							<th colspan="3" style="text-align:center;">Industry</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -81,7 +81,7 @@
 							<th>Financial Result</th>
 							<th></th>
 							<th></th>
-							<th>Peer Median Multiple</th>
+							<th>Industry Median Multiple</th>
 							<th>Implied Value</th>
 						</tr>
 					</thead>
@@ -137,6 +137,8 @@
 				</table>
 			</div>
 			<p id="commentary"></p>
+			<div id="news">
+			</div>
 		</div>
 		<footer>
 			<p id="evInfo"></p>
