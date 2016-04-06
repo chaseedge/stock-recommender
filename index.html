@@ -6,15 +6,13 @@
 		<link rel="stylesheet" href="css/skeleton.css"/>
 		<link rel="stylesheet" href="css/stocks.css">
 		<script type="text/javascript" src="scripts/stocks.js"></script>
-<!--REMOVE LIVERELOAD!!!-->
-		<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
 		<title>Stock Valuer</title>
  	</head>
  	<body>
  		<div class="container">
  			<p class="intro">This app performs relative valuations on any given US public company. It takes equity and enterprise value multiples of a company's industry and applies it to the company.</p>
 			<div class="row">
-				<input id="ticker" class="three columns" placeholder="Enter a ticker" onclick="this.select();">
+				<input id="ticker" class="three columns" placeholder="Enter a ticker" onclick="this.select();" autocomplete="off">
 				<button onclick="getData()" class="three columns button-primary">Run it</button>
 				<p id="loading" class="loading"></p>
 			</div>
@@ -38,7 +36,7 @@
 							<td style="font-weight:bold;">Median</td>
 							<td style="font-weight:bold;">Max</td>
 						</tr>
-						<tr id="pe">
+						<tr id="priceToEarnings">
 							<td>Price/Earnings</td>
 							<td></td>
 							<td></td>
@@ -46,7 +44,7 @@
 							<td></td>
 							<td></td>
 						</tr>
-						<tr id="pb">
+						<tr id="priceToBook">
 							<td>Price/Book</td>
 							<td></td>
 							<td></td>
@@ -54,7 +52,7 @@
 							<td></td>
 							<td></td>
 						</tr>
-						<tr id="evEbitda">
+						<tr id="evToEbitda">
 							<td>EV/EBITDA</td>
 							<td></td>
 							<td></td>
@@ -62,7 +60,7 @@
 							<td></td>
 							<td></td>
 						</tr>
-						<tr id="evFcf">
+						<tr id="evToFreeCashFlow">
 							<td>EV/FCF</td>
 							<td></td>
 							<td></td>
@@ -141,7 +139,7 @@
 			</div>
 		</div>
 		<footer>
-			<p id="evInfo"></p>
+			<p id="evInfo">1. Formula for the implied share values from enterprise multiples is  (Enterprise Value - Net Debt) / Shares Outstanding. </p>
 			<p>The Information on this Site is provided for illustration purposes only. The Information is not intended to be nor should it be construed as financial advice or any other advice.</br></p>
 			<p>Data is supplied by Yahoo Finance and Capital Cube.</p>
 		</footer>
