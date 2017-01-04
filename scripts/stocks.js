@@ -40,14 +40,10 @@ function getData() {
       parseStats(data, compInfo);
       return infoRequest(buildLink(ticker, "peers")).then(function(data){
         parsePeers(data, multiples, compInfo);
-        return infoRequest(buildLink(ticker, "news")).then(function(data){
-          parseNews(data, compInfo);
-          calcTargetPrice(compInfo, multiples, targetPrices);
-          htmlOutput(compInfo, multiples, targetPrices);
-          loadingMessage(false);
-          commentary(compInfo, targetPrices);
-          console.log("FINISHED!");
-        })
+        calcTargetPrice(compInfo, multiples, targetPrices);
+        htmlOutput(compInfo, multiples, targetPrices);
+        loadingMessage(false);
+        commentary(compInfo, targetPrices);
       })
     })
   }).catch(function(error) {
@@ -76,7 +72,8 @@ function loadingMessage(boolean) {
 function buildLink(ticker, database){
   var link;
   if (database === "stats")
-    link = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.keystats%20where%20symbol%20in%20('" + ticker + "')&format=json&env=https://raw.githubusercontent.com/cynwoody/yql-tables/finance-1/tables.env";
+    link = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20json%20where%20url=%27https://query2.finance.yahoo.com/v10/finance/quoteSummary/MSFT?modules=defaultKeyStatistics%27&format=json&env=store://datatables.org/alltableswithkeys"
+    // link = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.keystats%20where%20symbol%20in%20('" + ticker + "')&format=json&env=https://raw.githubusercontent.com/cynwoody/yql-tables/finance-1/tables.env";
   if (database === "quote")
     link = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20('" + ticker + "')&format=json&env=https://raw.githubusercontent.com/cynwoody/yql-tables/finance-1/tables.env";
   if (database === "peers")
@@ -148,16 +145,14 @@ function parseQuote(data, compInfo) {
 
   compInfo.mktCap = textToNum(compInfo["mktCapText"]);
   compInfo.ebitdaText = "$" + compInfo.ebitdaText;
-	console.log("finished with quote data");
 }
 
 function parseStats(data, compInfo) {
-	data = data.query.results.stats;
-  compInfo.ev = data["EnterpriseValue"]["content"];
-  compInfo.ebitda = data["EBITDA"]["content"];
-  compInfo.shares = data["SharesOutstanding"];
+  data = data.query.results.quoteSummary.result.defaultKeyStatistics;
+  compInfo.ev = data["enterpriseValue"]["raw"];
+  compInfo.ebitda = compInfo["ev"] / data["enterpriseToEbitda"]["raw"];
+  compInfo.shares = data["sharesOutstanding"]["raw"];
   compInfo.netDebt = compInfo["ev"] - compInfo["mktCap"];
-	console.log("finished with stats data");
 }
 
 function parsePeers(data, multiples, compInfo) {
@@ -215,7 +210,6 @@ function parsePeers(data, multiples, compInfo) {
     multiples[prop]["median"] = sortAndCalc(arr, calcMedian);
     multiples[prop]["company"] = company[prop];
   }
-  console.log("finished with peer data");
 }
 
 function sortAndCalc(arr, callback) {
@@ -263,26 +257,6 @@ function removeElements(data) {
     }
   }
 }
-
-function parseNews(data, compInfo) {
-	data = data.query.results.a;
-  var parentDiv = document.getElementById("news");
-  var header = document.createElement("H6");
-  parentDiv.innerHTML = "";
-  header.innerHTML = compInfo.name + " in the news";
-  parentDiv.appendChild(header);
-
-	//yahoo brings in a lot of data, just limiting it to 4
-  for (var i = 0; i < data.length && i < 4; i++) {
-    var entry = document.createElement("A");
-    entry.setAttribute("href", data[i]["href"]);
-    entry.innerHTML = data[i].content + "</br>";
-    parentDiv.appendChild(entry);
-  }
-	console.log("finished with news data");
-}
-
-
 
 //5. Calculting Target Price
 //Target prices are calculated by taking the company's earnings and applying to to the industry's multiples
